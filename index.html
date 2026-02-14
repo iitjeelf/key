@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LFJC Teacher Portal - Secure with Google Drive</title>
+    <title>LFJC Teacher Portal - GitHub & Google Drive</title>
     <style>
         * {
             margin: 0;
@@ -38,6 +38,11 @@
         .header h1 {
             font-size: 24px;
             margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
         }
         
         .logout-btn {
@@ -217,6 +222,11 @@
             margin-bottom: 5px;
         }
         
+        .folder-btn p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
         .upload-section {
             margin-top: 20px;
         }
@@ -363,6 +373,17 @@
             transform: none;
         }
         
+        .github-badge {
+            display: inline-block;
+            background: #333;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
         .drive-badge {
             display: inline-block;
             background: #4285f4;
@@ -416,6 +437,7 @@
             color: #666;
             margin-bottom: 25px;
             line-height: 1.5;
+            white-space: pre-line;
         }
         
         .acknowledgement-close {
@@ -495,7 +517,7 @@
     <div id="mainPortal" class="container" style="display: none;">
         <div class="header">
             <h1>📚 LFJC Teacher Portal</h1>
-            <p>Upload questions and answer keys (Keys auto-save to Google Drive)</p>
+            <p>Questions → GitHub | Answers → GitHub + Google Drive PDF</p>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         
@@ -518,19 +540,19 @@
                 <label>Select Upload Type</label>
                 <div class="folder-options">
                     <div class="folder-btn questions active" data-folder="questions">
-                        <h4>📝 Questions</h4>
-                        <p>Upload question files</p>
+                        <h4>📝 Questions <span class="github-badge">GitHub</span></h4>
+                        <p>Upload question files to GitHub</p>
                     </div>
                     <div class="folder-btn answers" data-folder="answers">
-                        <h4>✅ Answers <span class="drive-badge">Drive</span></h4>
-                        <p>Type and upload answer key (saves to Google Drive)</p>
+                        <h4>✅ Answers <span class="github-badge">GitHub</span> + <span class="drive-badge">Drive</span></h4>
+                        <p>Answer keys to GitHub & Google Drive PDF</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Date Picker for Answer Keys (Only shows when Answers is selected) -->
+            <!-- Date Picker for Answer Keys -->
             <div id="datePickerContainer" class="date-picker" style="display: none;">
-                <label>📅 Select Date for Answer Key <span class="drive-badge">Google Drive</span></label>
+                <label>📅 Select Date for Answer Key</label>
                 <input type="date" id="answerDate" value="">
             </div>
             
@@ -550,16 +572,16 @@
                     <h3>Answer Key - Class <span id="notepadClass">1D</span></h3>
                     <span class="notepad-badge" id="driveDateBadge">📅 No date selected</span>
                 </div>
-                <textarea class="notepad-textarea" id="notepadContent"></textarea>
+                <textarea class="notepad-textarea" id="notepadContent" placeholder="Type answers (A, B, C, D only) - Auto formats 5 per line"></textarea>
                 <div class="notepad-footer">
                     <div>Total answers: <span id="answerCount">0</span></div>
-                    <div>Letters: auto 5/row, Numbers: press ENTER</div>
+                    <div>Letters: auto 5/row</div>
                 </div>
             </div>
             
             <div class="action-buttons">
                 <button class="upload-btn" id="uploadBtn" onclick="startUpload()" disabled>
-                    📤 Upload Files
+                    📤 Upload
                 </button>
             </div>
         </div>
@@ -579,8 +601,15 @@
         const TEACHER_USERNAME = 'teacher';
         const TEACHER_PASSWORD = 'lfjc2024';
         
-        // Your Google Apps Script URL - UPDATED WITH YOUR SPECIFIC URL
+        // Google Apps Script URL (for PDF creation)
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyStlUlwicZq6z7UZ8Y0t9TN9MaLow2UScYX0iC5XYJ2dRIVdTJ3xmzUFdthJJHVQV7/exec';
+        
+        // GitHub Configuration - REPLACE WITH YOUR DETAILS
+        const GITHUB_CONFIG = {
+            token: 'your_github_personal_access_token',  // Create at: github.com/settings/tokens
+            repo: 'your_username/your_repo_name',        // e.g., 'johndoe/lfjc-materials'
+            branch: 'main'                                // or 'master'
+        };
         
         // ========== STATE MANAGEMENT ==========
         let isLoggedIn = false;
@@ -588,7 +617,7 @@
         let selectedClass = "1D";
         let selectedFolder = "questions";
         
-        // Set today's date as default for date picker
+        // Set today's date as default
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date();
             const yyyy = today.getFullYear();
@@ -627,6 +656,7 @@
         }
         
         function setupEventListeners() {
+            // Class selection
             document.querySelectorAll('.class-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.class-btn').forEach(b => b.classList.remove('active'));
@@ -637,6 +667,7 @@
                 });
             });
             
+            // Folder selection
             document.querySelectorAll('.folder-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.folder-btn').forEach(b => b.classList.remove('active'));
@@ -652,18 +683,20 @@
                 });
             });
             
-            // Date picker change event
+            // Date picker
             document.getElementById('answerDate').addEventListener('change', function(e) {
                 updateDateBadge(e.target.value);
                 updateUploadButton();
             });
             
+            // File input
             document.getElementById('fileInput').addEventListener('change', function(e) {
                 selectedFiles = Array.from(e.target.files);
                 updateFileList();
                 updateUploadButton();
             });
             
+            // Textarea formatting
             const textarea = document.getElementById('notepadContent');
             
             textarea.addEventListener('keydown', function(e) {
@@ -749,6 +782,7 @@
                 updateUploadButton();
             });
             
+            // Drag and drop
             const dropArea = document.querySelector('.upload-area');
             dropArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -783,13 +817,13 @@
                 notepadContainer.style.display = 'block';
                 questionSection.style.display = 'none';
                 datePicker.style.display = 'block';
-                uploadBtn.textContent = '📤 Upload Answer Key to Google Drive';
+                uploadBtn.textContent = '📤 Upload Answer Key (GitHub + Google Drive PDF)';
                 folderLabel.textContent = 'Type Answer Key Below';
             } else {
                 notepadContainer.style.display = 'none';
                 questionSection.style.display = 'block';
                 datePicker.style.display = 'none';
-                uploadBtn.textContent = '📤 Upload Files';
+                uploadBtn.textContent = '📤 Upload Questions to GitHub';
                 folderLabel.textContent = 'Select Files for Questions';
             }
             
@@ -822,14 +856,9 @@
         
         function updateAnswerCount() {
             const content = document.getElementById('notepadContent').value;
-            
             const letters = content.match(/[ABCD]/g);
-            const numbers = content.match(/\d+/g);
-            
             const letterCount = letters ? letters.length : 0;
-            const numberCount = numbers ? numbers.length : 0;
-            
-            document.getElementById('answerCount').textContent = letterCount + numberCount;
+            document.getElementById('answerCount').textContent = letterCount;
         }
         
         function showAcknowledgement(title, message, isSuccess) {
@@ -884,33 +913,49 @@
             }
         }
         
+        // ========== UPLOAD QUESTIONS TO GITHUB ==========
         async function uploadQuestions() {
             if (selectedFiles.length === 0) {
                 throw new Error('No files selected');
             }
             
-            const className = selectedClass.toLowerCase();
-            
             let uploaded = 0;
+            const errors = [];
             
             for (const file of selectedFiles) {
                 try {
-                    const success = await uploadToCloudflare(className, file, 'question');
+                    // Read file as base64
+                    const base64Content = await readFileAsBase64(file);
+                    
+                    // GitHub path: LFJC-Teacher-Portal/1D/Questions/filename
+                    const githubPath = `LFJC-Teacher-Portal/${selectedClass}/Questions/${file.name}`;
+                    
+                    // Upload to GitHub
+                    const success = await uploadToGitHub(
+                        base64Content.split(',')[1], // Remove data URL prefix
+                        githubPath,
+                        `Add question: ${file.name} for Class ${selectedClass}`
+                    );
+                    
                     if (success) {
                         uploaded++;
+                    } else {
+                        errors.push(file.name);
                     }
                 } catch (error) {
-                    console.error(`Failed to upload ${file.name}:`, error);
+                    errors.push(`${file.name} (${error.message})`);
                 }
             }
             
             if (uploaded > 0) {
-                showAcknowledgement(
-                    'Upload Successful!',
-                    `✅ ${uploaded} files uploaded to ${selectedClass}`,
-                    true
-                );
+                let message = `✅ ${uploaded} files uploaded to GitHub\n`;
+                message += `📁 LFJC-Teacher-Portal/${selectedClass}/Questions/`;
                 
+                if (errors.length > 0) {
+                    message += `\n\n⚠️ Failed: ${errors.join(', ')}`;
+                }
+                
+                showAcknowledgement('Questions Uploaded!', message, true);
                 selectedFiles = [];
                 updateFileList();
                 updateUploadButton();
@@ -919,9 +964,8 @@
             }
         }
         
-        // UPDATED: Answer Key upload function with your Google Apps Script URL
+        // ========== UPLOAD ANSWER KEY TO GITHUB + GOOGLE DRIVE PDF ==========
         async function uploadAnswerKey() {
-            const className = selectedClass.toLowerCase();
             const selectedDate = document.getElementById('answerDate').value;
             const textarea = document.getElementById('notepadContent');
             let content = textarea.value.trim();
@@ -937,54 +981,56 @@
             // Validate content
             const valid = content.replace(/[ABCD0-9\n]/g, '');
             if (valid.length > 0) {
-                throw new Error('Only A, B, C, D letters or numbers 0-9 allowed');
+                throw new Error('Only A, B, C, D letters allowed');
             }
             
-            // Create filename with date and class
-            const filename = `answer_key_${className}_${selectedDate}.txt`;
+            // Clean content for storage
+            const cleanContent = content.replace(/\s+/g, '');
             
-            // Prepare data for Google Apps Script
-            const data = {
-                class: className,
-                date: selectedDate,
-                content: content,
-                filename: filename
-            };
+            // Filenames
+            const txtFilename = `answer_key_${selectedDate}.txt`;
+            const pdfFilename = `${selectedClass}_${selectedDate}.pdf`;
+            
+            // GitHub path: LFJC-Teacher-Portal/1D/Answers/answer_key_2024-02-14.txt
+            const githubPath = `LFJC-Teacher-Portal/${selectedClass}/Answers/${txtFilename}`;
             
             try {
-                // Send to Google Apps Script (your URL is already set at the top)
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Important for Google Apps Script
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                // Also save to your Cloudflare for backup (optional)
-                const formData = new FormData();
-                formData.append('class', className);
-                formData.append('filename', filename);
-                formData.append('content', btoa(unescape(encodeURIComponent(content))));
-                formData.append('type', 'answer');
-                formData.append('date', selectedDate);
-                
-                await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const letters = content.match(/[ABCD]/g);
-                const numbers = content.match(/\d+/g);
-                const letterCount = letters ? letters.length : 0;
-                const numberCount = numbers ? numbers.length : 0;
-                
-                showAcknowledgement(
-                    '✅ Answer Key Uploaded to Google Drive!',
-                    `📁 Class: ${selectedClass}\n📅 Date: ${selectedDate}\n📊 Answers: ${letterCount + numberCount}\n💾 Saved to Google Drive (15GB free)`,
-                    true
+                // 1️⃣ Upload to GitHub
+                const base64Content = btoa(unescape(encodeURIComponent(cleanContent)));
+                const githubSuccess = await uploadToGitHub(
+                    base64Content,
+                    githubPath,
+                    `Add answer key for Class ${selectedClass} - ${selectedDate}`
                 );
+                
+                // 2️⃣ Send to Google Apps Script for PDF (all in one folder)
+                const pdfData = {
+                    class: selectedClass,
+                    date: selectedDate,
+                    content: cleanContent
+                };
+                
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pdfData)
+                });
+                
+                // Count answers
+                const letters = cleanContent.match(/[ABCD]/g);
+                const letterCount = letters ? letters.length : 0;
+                
+                let message = '';
+                if (githubSuccess) {
+                    message = `✅ GitHub: LFJC-Teacher-Portal/${selectedClass}/Answers/${txtFilename}\n`;
+                } else {
+                    message = `⚠️ GitHub upload failed\n`;
+                }
+                message += `✅ Google Drive: LFJC_Answer_Keys_PDF/${pdfFilename}\n`;
+                message += `📊 Total Answers: ${letterCount}`;
+                
+                showAcknowledgement('Answer Key Uploaded!', message, true);
                 
                 // Clear notepad
                 textarea.value = '';
@@ -992,34 +1038,52 @@
                 updateUploadButton();
                 
             } catch (error) {
-                showAcknowledgement('Upload Failed', `Error: ${error.message}`, false);
+                throw new Error(error.message);
             }
         }
         
-        async function uploadToCloudflare(className, file, type) {
+        // ========== GITHUB UPLOAD HELPER ==========
+        async function uploadToGitHub(base64Content, path, commitMessage) {
             try {
-                const base64Content = await readFileAsBase64(file);
-                
-                // Send to Cloudflare Function
-                const formData = new FormData();
-                formData.append('class', className);
-                formData.append('filename', encodeURIComponent(file.name));
-                formData.append('content', base64Content.split(',')[1]);
-                formData.append('type', type);
-                
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
+                // First, check if file exists to get SHA (required for update)
+                let sha = null;
+                const checkResponse = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.repo}/contents/${path}`, {
+                    headers: {
+                        'Authorization': `token ${GITHUB_CONFIG.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
                 });
                 
-                const result = await response.json();
-                return result.success === true;
+                if (checkResponse.ok) {
+                    const data = await checkResponse.json();
+                    sha = data.sha;
+                }
+                
+                // Upload file
+                const uploadResponse = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.repo}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GITHUB_CONFIG.token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({
+                        message: commitMessage,
+                        content: base64Content,
+                        sha: sha, // Include if updating existing file
+                        branch: GITHUB_CONFIG.branch
+                    })
+                });
+                
+                return uploadResponse.ok;
                 
             } catch (error) {
-                throw error;
+                console.error('GitHub upload error:', error);
+                return false;
             }
         }
         
+        // ========== FILE HELPERS ==========
         function readFileAsBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
