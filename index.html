@@ -1005,6 +1005,158 @@
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
+  // ========== GOOGLE DRIVE CONFIG ==========
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec'; // Your Apps Script URL
+
+// ========== UPDATE YOUR uploadAnswerKey FUNCTION ==========
+async function uploadAnswerKey() {
+    const className = selectedClass.toLowerCase();
+    const selectedDate = document.getElementById('answerDate').value;
+    const textarea = document.getElementById('notepadContent');
+    let content = textarea.value.trim();
+    
+    if (content.length === 0) {
+        throw new Error('Answer key is empty');
+    }
+    
+    if (!selectedDate) {
+        throw new Error('Please select a date');
+    }
+    
+    // Validate content
+    const valid = content.replace(/[ABCD0-9\n]/g, '');
+    if (valid.length > 0) {
+        throw new Error('Only A, B, C, D letters allowed');
+    }
+    
+    // Clean content
+    const cleanContent = content.replace(/\s+/g, '');
+    
+    // Encode for GitHub
+    const base64Content = btoa(unescape(encodeURIComponent(cleanContent)));
+    
+    // Send to your Cloudflare Worker
+    const formData = new FormData();
+    formData.append('class', className);
+    formData.append('content', base64Content);
+    formData.append('type', 'answer');
+    formData.append('date', selectedDate);
+    
+    const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+        throw new Error('Upload failed: ' + (result.message || 'Unknown error'));
+    }
+    
+    const letters = cleanContent.match(/[ABCD]/g);
+    const letterCount = letters ? letters.length : 0;
+    
+    let message = `✅ GitHub: ${className}/answers/answer-key-${selectedDate}.txt\n`;
+    if (result.drive?.success) {
+        message += `✅ Google Drive PDF: LFJC_Answer_Keys_PDF/${className.toUpperCase()}_${selectedDate}.pdf\n`;
+    }
+    message += `📊 Total Answers: ${letterCount}`;
+    
+    showAcknowledgement('Answer Key Uploaded!', message, true);
+    
+    // Clear notepad
+    textarea.value = '';
+    updateAnswerCount();
+    updateUploadButton();
+}
+
+// ========== UPDATE YOUR uploadQuestions FUNCTION ==========
+async function uploadQuestions() {
+    if (selectedFiles.length === 0) {
+        throw new Error('No files selected');
+    }
+    
+    const className = selectedClass.toLowerCase();
+    let uploaded = 0;
+    const errors = [];
+    
+    for (const file of selectedFiles) {
+        try {
+            const base64Content = await readFileAsBase64(file);
+            
+            const formData = new FormData();
+            formData.append('class', className);
+            formData.append('filename', file.name);
+            formData.append('content', base64Content.split(',')[1]);
+            formData.append('type', 'question');
+            
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                uploaded++;
+            } else {
+                errors.push(file.name);
+            }
+        } catch (error) {
+            errors.push(file.name);
+        }
+    }
+    
+    if (uploaded > 0) {
+        let message = `✅ ${uploaded} files uploaded to GitHub\n`;
+        message += `📁 ${className}/questions/\n`;
+        
+        if (errors.length > 0) {
+            message += `\n⚠️ Failed: ${errors.join(', ')}`;
+        }
+        
+        showAcknowledgement('Questions Uploaded!', message, true);
+        selectedFiles = [];
+        updateFileList();
+        updateUploadButton();
+    } else {
+        throw new Error('Failed to upload any files');
+    }
+}
+
+// ========== ADD DATE PICKER TO HTML ==========
+// Add this right before the notepad container in your HTML:
+/*
+<div class="date-picker" id="datePickerContainer" style="display: none;">
+    <label>📅 Select Date for Answer Key</label>
+    <input type="date" id="answerDate" value="">
+</div>
+*/
+
+// ========== UPDATE updateUI FUNCTION ==========
+function updateUI() {
+    const notepadContainer = document.getElementById('notepadContainer');
+    const questionSection = document.getElementById('questionUploadSection');
+    const datePicker = document.getElementById('datePickerContainer');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const folderLabel = document.getElementById('folderLabel');
+    
+    if (selectedFolder === 'answers') {
+        notepadContainer.style.display = 'block';
+        questionSection.style.display = 'none';
+        datePicker.style.display = 'block';
+        uploadBtn.textContent = '📤 Upload Answer Key (GitHub + Google Drive PDF)';
+        folderLabel.textContent = 'Type Answer Key Below';
+    } else {
+        notepadContainer.style.display = 'none';
+        questionSection.style.display = 'block';
+        datePicker.style.display = 'none';
+        uploadBtn.textContent = '📤 Upload Questions to GitHub';
+        folderLabel.textContent = 'Select Files for Questions';
+    }
+    
+    updateUploadButton();
+}
     </script>
 </body>
 </html>
