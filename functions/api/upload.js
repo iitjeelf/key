@@ -1,9 +1,9 @@
-// functions/api/upload.js - WITH GOOGLE DRIVE INTEGRATION
+// functions/api/upload.js - COMPLETE VERSION
 export async function onRequestPost(context) {
   try {
     const GITHUB_TOKEN = context.env.GITHUB_TOKEN;
     const GITHUB_USER = context.env.GITHUB_USER || "iitjeelf";
-    const GOOGLE_SCRIPT_URL = context.env.GOOGLE_SCRIPT_URL; // Add this to your env
+    const GOOGLE_SCRIPT_URL = context.env.GOOGLE_SCRIPT_URL;
     
     if (!GITHUB_TOKEN) {
       return errorResponse("No GitHub token");
@@ -45,13 +45,15 @@ export async function onRequestPost(context) {
       // ALSO send to Google Drive for PDF creation
       if (GOOGLE_SCRIPT_URL) {
         try {
+          const decodedContent = atob(content);
+          
           const driveResponse = await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               class: className.toUpperCase(),
               date: date,
-              content: atob(content) // Decode base64 content
+              content: decodedContent
             })
           });
           
