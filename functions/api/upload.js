@@ -1,9 +1,14 @@
-// functions/api/upload.js - COMPLETE VERSION
+// ===========================================
+// CLOUDFLARE WORKER - /functions/api/upload.js
+// ===========================================
+// With Google Drive PDF Backup
+// ===========================================
+
 export async function onRequestPost(context) {
   try {
     const GITHUB_TOKEN = context.env.GITHUB_TOKEN;
     const GITHUB_USER = context.env.GITHUB_USER || "iitjeelf";
-    const GOOGLE_SCRIPT_URL = context.env.GOOGLE_SCRIPT_URL;
+    const GOOGLE_APPS_SCRIPT_URL = context.env.GOOGLE_APPS_SCRIPT_URL;
     
     if (!GITHUB_TOKEN) {
       return errorResponse("No GitHub token");
@@ -14,78 +19,52 @@ export async function onRequestPost(context) {
     const filename = formData.get('filename');
     const content = formData.get('content');
     const type = formData.get('type') || 'question';
-    const date = formData.get('date') || new Date().toISOString().split('T')[0];
     
     console.log(`=== UPLOAD START ===`);
-    console.log(`Class: ${className}, Type: ${type}, Date: ${date}`);
+    console.log(`Class: ${className}, Type: ${type}`);
     
-    // Ensure repo exists
+    // Ensure GitHub repo exists
     await ensureRepo(GITHUB_USER, className, GITHUB_TOKEN);
     
     let filePath;
     let message;
-    let githubResult;
-    let driveResult = null;
     
     if (type === 'answer') {
-      // ANSWER: in answers folder with date
-      filePath = `answers/answer-key-${date}.txt`;
-      message = `Add answer key for ${className.toUpperCase()} - ${date}`;
-      
-      // Upload to GitHub
-      githubResult = await uploadFile(
-        GITHUB_USER,
-        className,
-        filePath,
-        content,
-        GITHUB_TOKEN,
-        message
-      );
-      
-      // ALSO send to Google Drive for PDF creation
-      if (GOOGLE_SCRIPT_URL) {
-        try {
-          const decodedContent = atob(content);
-          
-          const driveResponse = await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              class: className.toUpperCase(),
-              date: date,
-              content: decodedContent
-            })
-          });
-          
-          driveResult = await driveResponse.json();
-          console.log(`Google Drive PDF created: ${driveResult?.success}`);
-        } catch (driveError) {
-          console.error('Google Drive upload failed:', driveError);
-        }
-      }
-      
+      // ANSWER: answer-key.txt in ROOT
+      filePath = 'answer-key.txt';
+      message = `Update answer key for ${className.toUpperCase()}`;
     } else {
       // QUESTION: in questions folder
       filePath = `questions/${filename}`;
-      message = `Add question: ${filename} to ${className.toUpperCase()}`;
-      
-      githubResult = await uploadFile(
-        GITHUB_USER,
-        className,
-        filePath,
-        content,
-        GITHUB_TOKEN,
-        message
-      );
+      message = `Upload question: ${filename} to ${className.toUpperCase()}`;
     }
     
-    console.log(`=== UPLOAD SUCCESS ===`);
+    // Upload to GitHub
+    const result = await uploadFile(
+      GITHUB_USER,
+      className,
+      filePath,
+      content,
+      GITHUB_TOKEN,
+      message
+    );
     
-    return successResponse({
-      message: `Uploaded to ${className.toUpperCase()}`,
-      github: githubResult,
-      drive: driveResult
-    });
+    console.log(`=== GITHUB UPLOAD SUCCESS ===`);
+    
+    // ===== GOOGLE DRIVE BACKUP (for answer keys only) =====
+    if (type === 'answer' && GOOGLE_APPS_SCRIPT_URL) {
+      // Don't await - run in background
+      uploadToGoogleDrive(content, className, GOOGLE_APPS_SCRIPT_URL)
+        .then(driveResult => {
+          console.log('✓ Google Drive backup complete');
+        })
+        .catch(driveError => {
+          console.error('✗ Google Drive backup failed:', driveError);
+        });
+    }
+    // ====================================================
+    
+    return successResponse(`Uploaded to ${className.toUpperCase()}`, result.url);
     
   } catch (error) {
     console.error('=== UPLOAD ERROR ===');
@@ -94,6 +73,111 @@ export async function onRequestPost(context) {
   }
 }
 
+// ===== GOOGLE DRIVE UPLOAD FUNCTION =====
+async function uploadToGoogleDrive(content, className, appsScriptUrl) {
+  try {
+    console.log(`=== GOOGLE DRIVE BACKUP START ===`);
+    
+    // Format date: DD-MM-YYYY
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear();
+    const dateStr = `${day}-${month}-${year}`;
+    
+    // Create filename: DD-MM-YYYY_Section_AnswerKey.pdf
+    const filename = `${dateStr}_${className.toUpperCase()}_AnswerKey.pdf`;
+    
+    console.log(`Creating PDF: ${filename}`);
+    
+    // Create PDF from content
+    const pdfBuffer = createSimplePDF(content, className, dateStr);
+    
+    // Encode PDF to base64
+    const base64PDF = btoa(pdfBuffer);
+    
+    // Send to Google Apps Script
+    const response = await fetch(appsScriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filename: filename,
+        content: base64PDF
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log(`✓ Google Drive: ${result.url}`);
+    } else {
+      console.error(`✗ Google Drive error:`, result.error);
+    }
+    
+    return result;
+    
+  } catch (error) {
+    console.error(`✗ Google Drive exception:`, error);
+    throw error;
+  }
+}
+
+// ===== SIMPLE PDF CREATION =====
+function createSimplePDF(content, className, dateStr) {
+  // Decode base64 content from frontend
+  const decodedContent = atob(content);
+  
+  // Simple PDF structure
+  return `%PDF-1.4
+1 0 obj
+<</Type/Catalog/Pages 2 0 R>>
+endobj
+2 0 obj
+<</Type/Pages/Kids[3 0 R]/Count 1>>
+endobj
+3 0 obj
+<</Type/Page/Parent 2 0 R/Resources<</Font<</F1 4 0 R>>>> /MediaBox[0 0 612 792]/Contents 5 0 R>>
+endobj
+4 0 obj
+<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>
+endobj
+5 0 obj
+<</Length 2000>>
+stream
+BT
+/F1 16 Tf
+50 750 Td
+(LFJC ANSWER KEY - ${className.toUpperCase()}) Tj
+/F1 12 Tf
+0 -30 Td
+(Date: ${dateStr}) Tj
+0 -30 Td
+(----------------------------------------) Tj
+0 -20 Td
+(${decodedContent.replace(/\n/g, ' ) Tj\n0 -20 Td (')}) Tj
+0 -30 Td
+(----------------------------------------) Tj
+0 -20 Td
+(Generated by LFJC Teacher Portal) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000056 00000 n 
+0000000111 00000 n 
+0000000212 00000 n 
+0000000274 00000 n 
+trailer
+<</Size 6/Root 1 0 R>>
+startxref
+450
+%%EOF`;
+}
+
+// ===== GITHUB FUNCTIONS =====
 function githubHeaders(token, includeContentType = false) {
   const headers = {
     'Authorization': `token ${token}`,
@@ -108,11 +192,11 @@ function githubHeaders(token, includeContentType = false) {
   return headers;
 }
 
-function successResponse(data) {
-  return new Response(JSON.stringify({
-    success: true,
-    ...data
-  }), {
+function successResponse(message, url = null) {
+  const response = { success: true, message };
+  if (url) response.url = url;
+  
+  return new Response(JSON.stringify(response), {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*'
@@ -172,9 +256,6 @@ async function ensureRepo(username, repoName, token) {
 async function uploadFile(username, repoName, filePath, content, token, message) {
   const fileUrl = `https://api.github.com/repos/${username}/${repoName}/contents/${filePath}`;
   
-  console.log(`=== FILE UPLOAD DEBUG ===`);
-  console.log(`Target: ${fileUrl}`);
-  
   // Get SHA if file exists
   let sha = null;
   try {
@@ -185,12 +266,12 @@ async function uploadFile(username, repoName, filePath, content, token, message)
     if (checkResponse.ok) {
       const fileData = await checkResponse.json();
       sha = fileData.sha;
-      console.log(`✓ File EXISTS, will UPDATE`);
-    } else if (checkResponse.status === 404) {
-      console.log(`✓ File NOT FOUND, will CREATE`);
+      console.log(`✓ File exists, will update (SHA: ${sha?.substring(0, 8)}...)`);
+    } else {
+      console.log(`✗ File not found, will create new`);
     }
   } catch (error) {
-    console.log(`Error checking file: ${error.message}`);
+    console.log(`✗ Error checking file: ${error.message}`);
   }
   
   // Prepare upload data
@@ -204,7 +285,7 @@ async function uploadFile(username, repoName, filePath, content, token, message)
     uploadData.sha = sha;
   }
   
-  // Upload file
+  // Upload to GitHub
   const uploadResponse = await fetch(fileUrl, {
     method: 'PUT',
     headers: githubHeaders(token, true),
@@ -220,7 +301,6 @@ async function uploadFile(username, repoName, filePath, content, token, message)
   
   return {
     url: result.content.html_url,
-    sha: result.content.sha,
-    path: filePath
+    sha: result.content.sha
   };
 }
