@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LFJC Teacher Portal - Secure with Google Drive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background: #f5f7fa;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .main-content {
+            padding: 30px;
+        }
+        
+        /* Login Styles */
+        .login-container {
+            max-width: 400px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .login-header p {
+            color: #666;
+        }
+        
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .input-group label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .input-group input {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .login-btn {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .login-error {
+            color: #ef4444;
+            text-align: center;
+            font-size: 14px;
+            min-height: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .class-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        .class-btn {
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .class-btn:hover {
+            border-color: #667eea;
+        }
+        
+        .class-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .folder-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .folder-btn {
+            padding: 15px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .folder-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .folder-btn.active {
+            border-color: transparent;
+        }
+        
+        .folder-btn.questions.active {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .folder-btn.answers.active {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        
+        .folder-btn h4 {
+            margin-bottom: 5px;
+        }
+        
+        .upload-section {
+            margin-top: 20px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            background: white;
+            margin: 20px 0;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+        }
+        
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        .file-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+        }
+        
+        .file-item {
+            padding: 8px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+        }
+        
+        .date-picker {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .date-picker label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .date-picker input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .date-picker input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .notepad-container {
+            margin-top: 30px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .notepad-header {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .notepad-header h3 {
+            font-size: 16px;
+        }
+        
+        .notepad-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        
+        .notepad-textarea {
+            width: 100%;
+            height: 300px;
+            padding: 20px;
+            border: none;
+            font-family: 'Courier New', monospace;
+            font-size: 20px;
+            line-height: 1.6;
+            resize: vertical;
+            background: #fafafa;
+            letter-spacing: 1px;
+            caret-color: #667eea;
+        }
+        
+        .notepad-footer {
+            background: #fffef0;
+            padding: 10px 15px;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #eaeaea;
+        }
+        
+        .action-buttons {
+            margin-top: 30px;
+        }
+        
+        .upload-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .upload-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .drive-badge {
+            display: inline-block;
+            background: #4285f4;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
+        .acknowledgement-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .acknowledgement-box {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.4s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .acknowledgement-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .acknowledgement-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .acknowledgement-message {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        
+        .acknowledgement-close {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .acknowledgement-close:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .class-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .folder-options {
+                grid-template-columns: 1fr;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .notepad-textarea {
+                font-size: 18px;
+            }
+            .acknowledgement-box {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginContainer" class="login-container">
+        <div class="login-header">
+            <h2>🔐 Teacher Login</h2>
+            <p>Enter your credentials to access the portal</p>
+        </div>
+        <div class="login-form">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="Enter username">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Enter password">
+            </div>
+            <div class="login-error" id="loginError"></div>
+            <button class="login-btn" onclick="handleLogin()">Login</button>
+        </div>
+    </div>
+
+    <!-- Main Portal -->
+    <div id="mainPortal" class="container" style="display: none;">
+        <div class="header">
+            <h1>📚 LFJC Teacher Portal</h1>
+            <p>Upload questions and answer keys (Keys auto-save to Google Drive)</p>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
+        
+        <div class="main-content">
+            <div class="form-group">
+                <label>Select Class</label>
+                <div class="class-options">
+                    <div class="class-btn active" data-class="1D">Class 1D</div>
+                    <div class="class-btn" data-class="1M">Class 1M</div>
+                    <div class="class-btn" data-class="1N">Class 1N</div>
+                    <div class="class-btn" data-class="1E">Class 1E</div>
+                    <div class="class-btn" data-class="2D">Class 2D</div>
+                    <div class="class-btn" data-class="2M">Class 2M</div>
+                    <div class="class-btn" data-class="2N">Class 2N</div>
+                    <div class="class-btn" data-class="2E">Class 2E</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Select Upload Type</label>
+                <div class="folder-options">
+                    <div class="folder-btn questions active" data-folder="questions">
+                        <h4>📝 Questions</h4>
+                        <p>Upload question files</p>
+                    </div>
+                    <div class="folder-btn answers" data-folder="answers">
+                        <h4>✅ Answers <span class="drive-badge">Drive</span></h4>
+                        <p>Type and upload answer key (saves to Google Drive)</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Date Picker for Answer Keys (Only shows when Answers is selected) -->
+            <div id="datePickerContainer" class="date-picker" style="display: none;">
+                <label>📅 Select Date for Answer Key <span class="drive-badge">Google Drive</span></label>
+                <input type="date" id="answerDate" value="">
+            </div>
+            
+            <div class="upload-section" id="questionUploadSection">
+                <label id="folderLabel">Select Files for Questions</label>
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📂</div>
+                    <h3>Click to Browse Files</h3>
+                    <p>or drag and drop files here</p>
+                </div>
+                <input type="file" id="fileInput" multiple style="display: none;">
+                <div class="file-list" id="fileList"></div>
+            </div>
+            
+            <div class="notepad-container" id="notepadContainer" style="display: none;">
+                <div class="notepad-header">
+                    <h3>Answer Key - Class <span id="notepadClass">1D</span></h3>
+                    <span class="notepad-badge" id="driveDateBadge">📅 No date selected</span>
+                </div>
+                <textarea class="notepad-textarea" id="notepadContent"></textarea>
+                <div class="notepad-footer">
+                    <div>Total answers: <span id="answerCount">0</span></div>
+                    <div>Letters: auto 5/row, Numbers: press ENTER</div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="upload-btn" id="uploadBtn" onclick="startUpload()" disabled>
+                    📤 Upload Files
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="acknowledgement-overlay" id="acknowledgementOverlay">
+        <div class="acknowledgement-box">
+            <div class="acknowledgement-icon" id="ackIcon">✅</div>
+            <div class="acknowledgement-title" id="ackTitle">Upload Successful!</div>
+            <div class="acknowledgement-message" id="ackMessage"></div>
+            <button class="acknowledgement-close" onclick="closeAcknowledgement()">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== CONFIGURATION ==========
+        const TEACHER_USERNAME = 'teacher';
+        const TEACHER_PASSWORD = 'lfjc2024';
+        
+        // Google Drive Configuration (FREE - no credit card needed)
+        const GOOGLE_DRIVE_CONFIG = {
+            // Create a service account at https://console.cloud.google.com
+            // Share your Google Drive folders with this email
+            clientEmail: 'your-service-account@your-project.iam.gserviceaccount.com',
+            privateKey: '-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n',
+            
+            // Folder IDs from Google Drive (create folders and get IDs from URL)
+            // Example: https://drive.google.com/drive/folders/1a2b3c4d5e6f7g8h9i0j
+            folderIds: {
+                answers: 'YOUR_ANSWERS_FOLDER_ID_HERE' // Only answers go to Drive
+                // Questions stay in Cloudflare only
+            }
+        };
+        
+        // ========== STATE MANAGEMENT ==========
+        let isLoggedIn = false;
+        let selectedFiles = [];
+        let selectedClass = "1D";
+        let selectedFolder = "questions";
+        
+        // Set today's date as default for date picker
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const formattedDate = `${yyyy}-${mm}-${dd}`;
+            
+            document.getElementById('answerDate').value = formattedDate;
+            updateDateBadge(formattedDate);
+            
+            setupEventListeners();
+            updateUI();
+        });
+        
+        function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (username === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
+                isLoggedIn = true;
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('mainPortal').style.display = 'block';
+                errorDiv.textContent = '';
+            } else {
+                errorDiv.textContent = 'Invalid username or password';
+            }
+        }
+        
+        function handleLogout() {
+            isLoggedIn = false;
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('mainPortal').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+        
+        function setupEventListeners() {
+            document.querySelectorAll('.class-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.class-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedClass = this.dataset.class;
+                    document.getElementById('notepadClass').textContent = selectedClass;
+                    updateUI();
+                });
+            });
+            
+            document.querySelectorAll('.folder-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.folder-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedFolder = this.dataset.folder;
+                    updateUI();
+                    
+                    if (selectedFolder === 'answers') {
+                        const textarea = document.getElementById('notepadContent');
+                        textarea.value = '';
+                        updateAnswerCount();
+                    }
+                });
+            });
+            
+            // Date picker change event
+            document.getElementById('answerDate').addEventListener('change', function(e) {
+                updateDateBadge(e.target.value);
+                updateUploadButton();
+            });
+            
+            document.getElementById('fileInput').addEventListener('change', function(e) {
+                selectedFiles = Array.from(e.target.files);
+                updateFileList();
+                updateUploadButton();
+            });
+            
+            const textarea = document.getElementById('notepadContent');
+            
+            textarea.addEventListener('keydown', function(e) {
+                if ([8, 9, 13, 16, 17, 18, 20, 27, 37, 38, 39, 40, 46].includes(e.keyCode)) {
+                    return true;
+                }
+                
+                const allowedKeys = /^[a-dA-D0-9]$/;
+                if (!allowedKeys.test(e.key) && e.key.length === 1) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            textarea.addEventListener('input', function(e) {
+                const cursorPos = textarea.selectionStart;
+                let value = textarea.value;
+                
+                value = value.toUpperCase();
+                value = value.replace(/[^ABCD0-9\n]/g, '');
+                
+                const textBeforeCursor = value.substring(0, cursorPos);
+                const linesBefore = textBeforeCursor.split('\n');
+                const currentLine = linesBefore[linesBefore.length - 1];
+                
+                const typedChar = e.data ? e.data.toUpperCase() : '';
+                if (/^[ABCD]$/.test(typedChar)) {
+                    const lettersInLine = currentLine.replace(/[^ABCD]/g, '').length;
+                    
+                    if (lettersInLine === 5) {
+                        const beforeText = value.substring(0, cursorPos);
+                        const afterText = value.substring(cursorPos);
+                        value = beforeText + '\n' + afterText;
+                        
+                        textarea.value = value;
+                        
+                        const newCursorPos = cursorPos + 1;
+                        setTimeout(() => {
+                            textarea.setSelectionRange(newCursorPos, newCursorPos);
+                        }, 0);
+                        
+                        updateAnswerCount();
+                        updateUploadButton();
+                        return;
+                    }
+                }
+                
+                const lines = value.split('\n');
+                let formattedLines = [];
+                
+                for (let line of lines) {
+                    if (line.length === 0) {
+                        formattedLines.push('');
+                        continue;
+                    }
+                    
+                    if (/^[ABCD]+$/.test(line)) {
+                        for (let i = 0; i < line.length; i += 5) {
+                            const chunk = line.substring(i, i + 5);
+                            if (chunk) formattedLines.push(chunk);
+                        }
+                    } else {
+                        formattedLines.push(line);
+                    }
+                }
+                
+                const newValue = formattedLines.join('\n');
+                
+                if (newValue !== value) {
+                    textarea.value = newValue;
+                    
+                    let newCursorPos = cursorPos;
+                    if (newValue.length !== value.length) {
+                        newCursorPos = Math.max(0, Math.min(cursorPos, newValue.length));
+                    }
+                    
+                    setTimeout(() => {
+                        textarea.setSelectionRange(newCursorPos, newCursorPos);
+                    }, 0);
+                }
+                
+                updateAnswerCount();
+                updateUploadButton();
+            });
+            
+            const dropArea = document.querySelector('.upload-area');
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.style.borderColor = '#667eea';
+            });
+            
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.style.borderColor = '#d1d5db';
+                selectedFiles = Array.from(e.dataTransfer.files);
+                updateFileList();
+                updateUploadButton();
+            });
+        }
+        
+        function updateDateBadge(date) {
+            if (date) {
+                document.getElementById('driveDateBadge').textContent = `📅 ${date}`;
+            } else {
+                document.getElementById('driveDateBadge').textContent = '📅 No date selected';
+            }
+        }
+        
+        function updateUI() {
+            const notepadContainer = document.getElementById('notepadContainer');
+            const questionSection = document.getElementById('questionUploadSection');
+            const datePicker = document.getElementById('datePickerContainer');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const folderLabel = document.getElementById('folderLabel');
+            
+            if (selectedFolder === 'answers') {
+                notepadContainer.style.display = 'block';
+                questionSection.style.display = 'none';
+                datePicker.style.display = 'block';
+                uploadBtn.textContent = '📤 Upload Answer Key to Drive';
+                folderLabel.textContent = 'Type Answer Key Below';
+            } else {
+                notepadContainer.style.display = 'none';
+                questionSection.style.display = 'block';
+                datePicker.style.display = 'none';
+                uploadBtn.textContent = '📤 Upload Files';
+                folderLabel.textContent = 'Select Files for Questions';
+            }
+            
+            updateUploadButton();
+        }
+        
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            
+            if (selectedFiles.length > 0) {
+                fileList.innerHTML = selectedFiles.map(file => 
+                    `<div class="file-item">📄 ${file.name} (${formatSize(file.size)})</div>`
+                ).join('');
+            } else {
+                fileList.innerHTML = '';
+            }
+        }
+        
+        function updateUploadButton() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (selectedFolder === 'questions') {
+                uploadBtn.disabled = selectedFiles.length === 0;
+            } else {
+                const content = document.getElementById('notepadContent').value.trim();
+                const date = document.getElementById('answerDate').value;
+                uploadBtn.disabled = content.length === 0 || !date;
+            }
+        }
+        
+        function updateAnswerCount() {
+            const content = document.getElementById('notepadContent').value;
+            
+            const letters = content.match(/[ABCD]/g);
+            const numbers = content.match(/\d+/g);
+            
+            const letterCount = letters ? letters.length : 0;
+            const numberCount = numbers ? numbers.length : 0;
+            
+            document.getElementById('answerCount').textContent = letterCount + numberCount;
+        }
+        
+        function showAcknowledgement(title, message, isSuccess) {
+            const overlay = document.getElementById('acknowledgementOverlay');
+            const icon = document.getElementById('ackIcon');
+            const ackTitle = document.getElementById('ackTitle');
+            const ackMessage = document.getElementById('ackMessage');
+            
+            if (isSuccess) {
+                icon.textContent = '✅';
+                icon.style.color = '#10b981';
+                ackTitle.style.color = '#065f46';
+            } else {
+                icon.textContent = '❌';
+                icon.style.color = '#ef4444';
+                ackTitle.style.color = '#7f1d1d';
+            }
+            
+            ackTitle.textContent = title;
+            ackMessage.textContent = message;
+            overlay.style.display = 'flex';
+            
+            setTimeout(() => {
+                if (overlay.style.display === 'flex') {
+                    closeAcknowledgement();
+                }
+            }, 5000);
+        }
+        
+        function closeAcknowledgement() {
+            document.getElementById('acknowledgementOverlay').style.display = 'none';
+        }
+        
+        async function startUpload() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            const originalText = uploadBtn.textContent;
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '⏳ Uploading...';
+            
+            try {
+                if (selectedFolder === 'questions') {
+                    await uploadQuestions();
+                } else {
+                    await uploadAnswerKey();
+                }
+            } catch (error) {
+                showAcknowledgement('Upload Failed', `Error: ${error.message}`, false);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = originalText;
+            }
+        }
+        
+        async function uploadQuestions() {
+            if (selectedFiles.length === 0) {
+                throw new Error('No files selected');
+            }
+            
+            const className = selectedClass.toLowerCase();
+            
+            let uploaded = 0;
+            
+            for (const file of selectedFiles) {
+                try {
+                    const success = await uploadToCloudflare(className, file, 'question');
+                    if (success) {
+                        uploaded++;
+                    }
+                } catch (error) {
+                    console.error(`Failed to upload ${file.name}:`, error);
+                }
+            }
+            
+            if (uploaded > 0) {
+                showAcknowledgement(
+                    'Upload Successful!',
+                    `✅ ${uploaded} files uploaded to ${selectedClass}`,
+                    true
+                );
+                
+                selectedFiles = [];
+                updateFileList();
+                updateUploadButton();
+            } else {
+                throw new Error('Failed to upload any files');
+            }
+        }
+        
+        async function uploadAnswerKey() {
+            const className = selectedClass.toLowerCase();
+            const selectedDate = document.getElementById('answerDate').value;
+            const textarea = document.getElementById('notepadContent');
+            let content = textarea.value.trim();
+            
+            if (content.length === 0) {
+                throw new Error('Answer key is empty');
+            }
+            
+            if (!selectedDate) {
+                throw new Error('Please select a date');
+            }
+            
+            const valid = content.replace(/[ABCD0-9\n]/g, '');
+            if (valid.length > 0) {
+                throw new Error('Only A, B, C, D letters or numbers 0-9 allowed');
+            }
+            
+            // Format filename with date and class
+            const filename = `answer_key_${className}_${selectedDate}.txt`;
+            
+            // Encode answer key content
+            const base64Content = btoa(unescape(encodeURIComponent(content)));
+            
+            // Send to Cloudflare (includes Drive flag)
+            const formData = new FormData();
+            formData.append('class', className);
+            formData.append('filename', filename);
+            formData.append('content', base64Content);
+            formData.append('type', 'answer');
+            formData.append('date', selectedDate);
+            formData.append('saveToDrive', 'true'); // Flag to save to Google Drive
+            
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error('Failed to upload answer key: ' + result.message);
+            }
+            
+            const letters = content.match(/[ABCD]/g);
+            const numbers = content.match(/\d+/g);
+            const letterCount = letters ? letters.length : 0;
+            const numberCount = numbers ? numbers.length : 0;
+            
+            let driveMessage = '';
+            if (result.driveSuccess) {
+                driveMessage = `\n✅ Saved to Google Drive folder: ${selectedDate}/`;
+            } else if (result.driveError) {
+                driveMessage = `\n⚠️ Drive save failed: ${result.driveError}`;
+            }
+            
+            showAcknowledgement(
+                'Answer Key Uploaded!',
+                `✅ Answer key saved for ${selectedClass} (${letterCount} letters, ${numberCount} numbers)${driveMessage}`,
+                true
+            );
+            
+            // Clear notepad after successful upload
+            textarea.value = '';
+            updateAnswerCount();
+            updateUploadButton();
+        }
+        
+        async function uploadToCloudflare(className, file, type) {
+            try {
+                const base64Content = await readFileAsBase64(file);
+                
+                // Send to Cloudflare Function
+                const formData = new FormData();
+                formData.append('class', className);
+                formData.append('filename', encodeURIComponent(file.name));
+                formData.append('content', base64Content.split(',')[1]);
+                formData.append('type', type);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                return result.success === true;
+                
+            } catch (error) {
+                throw error;
+            }
+        }
+        
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+    </script>
+</body>
+</html>
