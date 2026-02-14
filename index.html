@@ -32,6 +32,7 @@
             padding: 25px;
             text-align: center;
             border-radius: 10px 10px 0 0;
+            position: relative;
         }
         
         .header h1 {
@@ -39,8 +40,22 @@
             margin-bottom: 5px;
         }
         
-        .main-content {
-            padding: 30px;
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.5);
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
         }
         
         /* Login Styles */
@@ -119,6 +134,10 @@
             text-align: center;
             font-size: 14px;
             min-height: 20px;
+        }
+        
+        .main-content {
+            padding: 30px;
         }
         
         .form-group {
@@ -560,20 +579,8 @@
         const TEACHER_USERNAME = 'teacher';
         const TEACHER_PASSWORD = 'lfjc2024';
         
-        // Google Drive Configuration (FREE - no credit card needed)
-        const GOOGLE_DRIVE_CONFIG = {
-            // Create a service account at https://console.cloud.google.com
-            // Share your Google Drive folders with this email
-            clientEmail: 'your-service-account@your-project.iam.gserviceaccount.com',
-            privateKey: '-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n',
-            
-            // Folder IDs from Google Drive (create folders and get IDs from URL)
-            // Example: https://drive.google.com/drive/folders/1a2b3c4d5e6f7g8h9i0j
-            folderIds: {
-                answers: 'YOUR_ANSWERS_FOLDER_ID_HERE' // Only answers go to Drive
-                // Questions stay in Cloudflare only
-            }
-        };
+        // Your Google Apps Script URL - UPDATED WITH YOUR SPECIFIC URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWt-oXC5ov8981SG1q4cCgvoK4uuLsfEqCnujbUne8jMC5OMJ_JjsTvKufBIz7fXIpWQ/exec';
         
         // ========== STATE MANAGEMENT ==========
         let isLoggedIn = false;
@@ -776,7 +783,7 @@
                 notepadContainer.style.display = 'block';
                 questionSection.style.display = 'none';
                 datePicker.style.display = 'block';
-                uploadBtn.textContent = '📤 Upload Answer Key to Drive';
+                uploadBtn.textContent = '📤 Upload Answer Key to Google Drive';
                 folderLabel.textContent = 'Type Answer Key Below';
             } else {
                 notepadContainer.style.display = 'none';
@@ -912,6 +919,7 @@
             }
         }
         
+        // UPDATED: Answer Key upload function with your Google Apps Script URL
         async function uploadAnswerKey() {
             const className = selectedClass.toLowerCase();
             const selectedDate = document.getElementById('answerDate').value;
@@ -926,59 +934,66 @@
                 throw new Error('Please select a date');
             }
             
+            // Validate content
             const valid = content.replace(/[ABCD0-9\n]/g, '');
             if (valid.length > 0) {
                 throw new Error('Only A, B, C, D letters or numbers 0-9 allowed');
             }
             
-            // Format filename with date and class
+            // Create filename with date and class
             const filename = `answer_key_${className}_${selectedDate}.txt`;
             
-            // Encode answer key content
-            const base64Content = btoa(unescape(encodeURIComponent(content)));
+            // Prepare data for Google Apps Script
+            const data = {
+                class: className,
+                date: selectedDate,
+                content: content,
+                filename: filename
+            };
             
-            // Send to Cloudflare (includes Drive flag)
-            const formData = new FormData();
-            formData.append('class', className);
-            formData.append('filename', filename);
-            formData.append('content', base64Content);
-            formData.append('type', 'answer');
-            formData.append('date', selectedDate);
-            formData.append('saveToDrive', 'true'); // Flag to save to Google Drive
-            
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            
-            if (!result.success) {
-                throw new Error('Failed to upload answer key: ' + result.message);
+            try {
+                // Send to Google Apps Script (your URL is already set at the top)
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Important for Google Apps Script
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                // Also save to your Cloudflare for backup (optional)
+                const formData = new FormData();
+                formData.append('class', className);
+                formData.append('filename', filename);
+                formData.append('content', btoa(unescape(encodeURIComponent(content))));
+                formData.append('type', 'answer');
+                formData.append('date', selectedDate);
+                
+                await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const letters = content.match(/[ABCD]/g);
+                const numbers = content.match(/\d+/g);
+                const letterCount = letters ? letters.length : 0;
+                const numberCount = numbers ? numbers.length : 0;
+                
+                showAcknowledgement(
+                    '✅ Answer Key Uploaded to Google Drive!',
+                    `📁 Class: ${selectedClass}\n📅 Date: ${selectedDate}\n📊 Answers: ${letterCount + numberCount}\n💾 Saved to Google Drive (15GB free)`,
+                    true
+                );
+                
+                // Clear notepad
+                textarea.value = '';
+                updateAnswerCount();
+                updateUploadButton();
+                
+            } catch (error) {
+                showAcknowledgement('Upload Failed', `Error: ${error.message}`, false);
             }
-            
-            const letters = content.match(/[ABCD]/g);
-            const numbers = content.match(/\d+/g);
-            const letterCount = letters ? letters.length : 0;
-            const numberCount = numbers ? numbers.length : 0;
-            
-            let driveMessage = '';
-            if (result.driveSuccess) {
-                driveMessage = `\n✅ Saved to Google Drive folder: ${selectedDate}/`;
-            } else if (result.driveError) {
-                driveMessage = `\n⚠️ Drive save failed: ${result.driveError}`;
-            }
-            
-            showAcknowledgement(
-                'Answer Key Uploaded!',
-                `✅ Answer key saved for ${selectedClass} (${letterCount} letters, ${numberCount} numbers)${driveMessage}`,
-                true
-            );
-            
-            // Clear notepad after successful upload
-            textarea.value = '';
-            updateAnswerCount();
-            updateUploadButton();
         }
         
         async function uploadToCloudflare(className, file, type) {
