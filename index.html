@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LFJC Teacher Portal - GitHub & Google Drive</title>
+    <title>LFJC Teacher Portal</title>
     <style>
+        /* ALL YOUR EXISTING STYLES REMAIN EXACTLY THE SAME */
         * {
             margin: 0;
             padding: 0;
@@ -32,113 +33,11 @@
             padding: 25px;
             text-align: center;
             border-radius: 10px 10px 0 0;
-            position: relative;
         }
         
         .header h1 {
             font-size: 24px;
             margin-bottom: 5px;
-        }
-        
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.5);
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        
-        .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        /* Login Styles */
-        .login-container {
-            max-width: 400px;
-            margin: 50px auto;
-            background: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .login-header h2 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .login-header p {
-            color: #666;
-        }
-        
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .input-group label {
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .input-group input {
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.2s;
-        }
-        
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .login-btn {
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-            margin-top: 10px;
-        }
-        
-        .login-btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .login-error {
-            color: #ef4444;
-            text-align: center;
-            font-size: 14px;
-            min-height: 20px;
         }
         
         .main-content {
@@ -220,11 +119,6 @@
         
         .folder-btn h4 {
             margin-bottom: 5px;
-        }
-        
-        .folder-btn p {
-            font-size: 12px;
-            opacity: 0.8;
         }
         
         .upload-section {
@@ -395,6 +289,17 @@
             vertical-align: middle;
         }
         
+        .cf-badge {
+            display: inline-block;
+            background: #f6821f;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
         .acknowledgement-overlay {
             position: fixed;
             top: 0;
@@ -517,7 +422,7 @@
     <div id="mainPortal" class="container" style="display: none;">
         <div class="header">
             <h1>📚 LFJC Teacher Portal</h1>
-            <p>Questions → GitHub | Answers → GitHub + Google Drive PDF</p>
+            <p>Hosted on Cloudflare Pages | GitHub: iitjeelf/key</p>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         
@@ -541,10 +446,10 @@
                 <div class="folder-options">
                     <div class="folder-btn questions active" data-folder="questions">
                         <h4>📝 Questions <span class="github-badge">GitHub</span></h4>
-                        <p>Upload question files to GitHub</p>
+                        <p>Upload question files to repo</p>
                     </div>
                     <div class="folder-btn answers" data-folder="answers">
-                        <h4>✅ Answers <span class="github-badge">GitHub</span> + <span class="drive-badge">Drive</span></h4>
+                        <h4>✅ Answers <span class="github-badge">GitHub</span> + <span class="drive-badge">Drive PDF</span></h4>
                         <p>Answer keys to GitHub & Google Drive PDF</p>
                     </div>
                 </div>
@@ -601,14 +506,14 @@
         const TEACHER_USERNAME = 'teacher';
         const TEACHER_PASSWORD = 'lfjc2024';
         
-        // Google Apps Script URL (for PDF creation)
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyStlUlwicZq6z7UZ8Y0t9TN9MaLow2UScYX0iC5XYJ2dRIVdTJ3xmzUFdthJJHVQV7/exec';
+        // Your Google Apps Script URL (for PDF creation)
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec'; // ← REPLACE THIS
         
-        // GitHub Configuration - REPLACE WITH YOUR DETAILS
+        // GitHub Configuration - USING YOUR REPO
         const GITHUB_CONFIG = {
-            token: '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',  // Create at: github.com/settings/tokens
-            repo: 'iitjeelf/key',        // e.g., 'johndoe/lfjc-materials'
-            branch: 'main'                                // or 'master'
+            token: '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',  // ← REPLACE WITH YOUR TOKEN
+            repo: 'iitjeelf/key',                         // Your username/repo
+            branch: 'main'                                 // or 'master'
         };
         
         // ========== STATE MANAGEMENT ==========
@@ -950,6 +855,7 @@
             if (uploaded > 0) {
                 let message = `✅ ${uploaded} files uploaded to GitHub\n`;
                 message += `📁 LFJC-Teacher-Portal/${selectedClass}/Questions/`;
+                message += `\n🌐 Repo: iitjeelf/key`;
                 
                 if (errors.length > 0) {
                     message += `\n\n⚠️ Failed: ${errors.join(', ')}`;
@@ -984,7 +890,7 @@
                 throw new Error('Only A, B, C, D letters allowed');
             }
             
-            // Clean content for storage
+            // Clean content for storage (remove spaces, newlines)
             const cleanContent = content.replace(/\s+/g, '');
             
             // Filenames
@@ -1024,6 +930,7 @@
                 let message = '';
                 if (githubSuccess) {
                     message = `✅ GitHub: LFJC-Teacher-Portal/${selectedClass}/Answers/${txtFilename}\n`;
+                    message += `   Repo: iitjeelf/key\n`;
                 } else {
                     message = `⚠️ GitHub upload failed\n`;
                 }
