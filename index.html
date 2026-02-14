@@ -18,77 +18,6 @@
             min-height: 100vh;
         }
         
-        /* Login Styles */
-        .login-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            padding: 20px;
-        }
-        
-        .login-box {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-        }
-        
-        .login-box h2 {
-            margin-bottom: 30px;
-            color: #1d1d1f;
-        }
-        
-        .password-box {
-            width: 100%;
-            padding: 16px;
-            font-size: 18px;
-            border: 2px solid #007aff;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            background: #f8f9fa;
-            display: block;
-        }
-        
-        .access-box {
-            background: #007aff;
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            display: block;
-            transition: all 0.3s;
-        }
-        
-        .access-box:hover {
-            background: #0056cc;
-            transform: translateY(-2px);
-        }
-        
-        .error-msg {
-            color: #d32f2f;
-            margin-top: 15px;
-            min-height: 20px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
         .container {
             max-width: 900px;
             margin: 0 auto;
@@ -231,34 +160,6 @@
             font-size: 14px;
         }
         
-        .date-picker {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .date-picker label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .date-picker input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        
-        .date-picker input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
         .notepad-container {
             margin-top: 30px;
             border-radius: 8px;
@@ -369,7 +270,6 @@
             color: #666;
             margin-bottom: 25px;
             line-height: 1.5;
-            white-space: pre-line;
         }
         
         .acknowledgement-close {
@@ -425,29 +325,10 @@
     </style>
 </head>
 <body>
-    <!-- LOGIN SCREEN -->
-    <div id="loginScreen" class="login-overlay">
-        <div class="login-box">
-            <h2>🔐 LFJC Teacher Login</h2>
-            <input type="password" 
-                   id="passwordInput" 
-                   class="password-box" 
-                   placeholder="Enter Password" 
-                   autocomplete="off">
-            
-            <button class="access-box" onclick="checkPassword()">
-                Access Portal
-            </button>
-            
-            <div id="errorMsg" class="error-msg"></div>
-        </div>
-    </div>
-    
-    <!-- MAIN PORTAL -->
-    <div id="mainPortal" class="container hidden">
+    <div class="container">
         <div class="header">
             <h1>📚 LFJC Teacher Portal</h1>
-            <p>Questions → GitHub | Answers → GitHub + Google Drive PDF</p>
+            <p>Upload questions and answer keys</p>
         </div>
         
         <div class="main-content">
@@ -470,23 +351,17 @@
                 <div class="folder-options">
                     <div class="folder-btn questions active" data-folder="questions">
                         <h4>📝 Questions</h4>
-                        <p>Upload to GitHub</p>
+                        <p>Upload question files</p>
                     </div>
                     <div class="folder-btn answers" data-folder="answers">
                         <h4>✅ Answers</h4>
-                        <p>Upload to GitHub + Google Drive PDF</p>
+                        <p>Type and upload answer key</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Date Picker for Answers -->
-            <div id="datePickerContainer" class="date-picker" style="display: none;">
-                <label>📅 Select Date for Answer Key</label>
-                <input type="date" id="answerDate" value="">
-            </div>
-            
             <div class="upload-section" id="questionUploadSection">
-                <label>Select Files for Questions</label>
+                <label id="folderLabel">Select Files for Questions</label>
                 <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                     <div class="upload-icon">📂</div>
                     <h3>Click to Browse Files</h3>
@@ -500,16 +375,16 @@
                 <div class="notepad-header">
                     <h3>Answer Key - Class <span id="notepadClass">1D</span></h3>
                 </div>
-                <textarea class="notepad-textarea" id="notepadContent" placeholder="Type answers (A, B, C, D only) - Auto formats 5 per line"></textarea>
+                <textarea class="notepad-textarea" id="notepadContent"></textarea>
                 <div class="notepad-footer">
                     <div>Total answers: <span id="answerCount">0</span></div>
-                    <div>Letters: auto 5/row</div>
+                    <div>Letters: auto 5/row, Numbers: press ENTER</div>
                 </div>
             </div>
             
             <div class="action-buttons">
                 <button class="upload-btn" id="uploadBtn" onclick="startUpload()" disabled>
-                    📤 Upload
+                    📤 Upload Files
                 </button>
             </div>
         </div>
@@ -525,63 +400,18 @@
     </div>
 
     <script>
-        // ========== CONFIGURATION ==========
-        const TEACHER_USERNAME = 'teacher';
-        const TEACHER_PASSWORD = 'lfjc2024';  // ← PASSWORD IS 'lfjc2024'
+        // ========== FRONTEND - NO TOKEN ==========
         
-        // Your Worker URL - UPDATE THIS WITH YOUR CLOUDFLARE WORKER URL
-        const WORKER_URL = 'https://key-51a.pages.dev/api/upload'; // Change to your actual URL
-        
-        // ========== LOGIN FUNCTION ==========
-        function checkPassword() {
-            const input = document.getElementById('passwordInput').value;
-            const errorMsg = document.getElementById('errorMsg');
-            
-            console.log("Entered:", input);
-            console.log("Expected:", TEACHER_PASSWORD);
-            
-            if (input === TEACHER_PASSWORD) {
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainPortal').classList.remove('hidden');
-                init();
-            } else {
-                errorMsg.textContent = "Wrong password - try 'lfjc2024'";
-                document.getElementById('passwordInput').value = '';
-                document.getElementById('passwordInput').focus();
-            }
-        }
-        
-        // Enter key to submit
-        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') checkPassword();
-        });
-
-        // Auto-focus on password box
-        setTimeout(() => {
-            document.getElementById('passwordInput').focus();
-        }, 300);
-        
-        // ========== STATE MANAGEMENT ==========
         let selectedFiles = [];
         let selectedClass = "1D";
         let selectedFolder = "questions";
         
-        function init() {
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            const formattedDate = `${yyyy}-${mm}-${dd}`;
-            
-            const dateInput = document.getElementById('answerDate');
-            if (dateInput) dateInput.value = formattedDate;
-            
+        document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
             updateUI();
-        }
+        });
         
         function setupEventListeners() {
-            // Class selection
             document.querySelectorAll('.class-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.class-btn').forEach(b => b.classList.remove('active'));
@@ -592,7 +422,6 @@
                 });
             });
             
-            // Folder selection
             document.querySelectorAll('.folder-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.folder-btn').forEach(b => b.classList.remove('active'));
@@ -608,20 +437,12 @@
                 });
             });
             
-            // Date picker
-            const dateInput = document.getElementById('answerDate');
-            if (dateInput) {
-                dateInput.addEventListener('change', updateUploadButton);
-            }
-            
-            // File input
             document.getElementById('fileInput').addEventListener('change', function(e) {
                 selectedFiles = Array.from(e.target.files);
                 updateFileList();
                 updateUploadButton();
             });
             
-            // Textarea formatting
             const textarea = document.getElementById('notepadContent');
             
             textarea.addEventListener('keydown', function(e) {
@@ -629,7 +450,7 @@
                     return true;
                 }
                 
-                const allowedKeys = /^[a-dA-D]$/;
+                const allowedKeys = /^[a-dA-D0-9]$/;
                 if (!allowedKeys.test(e.key) && e.key.length === 1) {
                     e.preventDefault();
                     return false;
@@ -641,7 +462,7 @@
                 let value = textarea.value;
                 
                 value = value.toUpperCase();
-                value = value.replace(/[^ABCD\n]/g, '');
+                value = value.replace(/[^ABCD0-9\n]/g, '');
                 
                 const textBeforeCursor = value.substring(0, cursorPos);
                 const linesBefore = textBeforeCursor.split('\n');
@@ -707,7 +528,6 @@
                 updateUploadButton();
             });
             
-            // Drag and drop
             const dropArea = document.querySelector('.upload-area');
             dropArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -726,19 +546,19 @@
         function updateUI() {
             const notepadContainer = document.getElementById('notepadContainer');
             const questionSection = document.getElementById('questionUploadSection');
-            const datePicker = document.getElementById('datePickerContainer');
             const uploadBtn = document.getElementById('uploadBtn');
+            const folderLabel = document.getElementById('folderLabel');
             
             if (selectedFolder === 'answers') {
                 notepadContainer.style.display = 'block';
                 questionSection.style.display = 'none';
-                datePicker.style.display = 'block';
                 uploadBtn.textContent = '📤 Upload Answer Key';
+                folderLabel.textContent = 'Type Answer Key Below';
             } else {
                 notepadContainer.style.display = 'none';
                 questionSection.style.display = 'block';
-                datePicker.style.display = 'none';
-                uploadBtn.textContent = '📤 Upload Questions';
+                uploadBtn.textContent = '📤 Upload Files';
+                folderLabel.textContent = 'Select Files for Questions';
             }
             
             updateUploadButton();
@@ -763,16 +583,20 @@
                 uploadBtn.disabled = selectedFiles.length === 0;
             } else {
                 const content = document.getElementById('notepadContent').value.trim();
-                const date = document.getElementById('answerDate').value;
-                uploadBtn.disabled = content.length === 0 || !date;
+                uploadBtn.disabled = content.length === 0;
             }
         }
         
         function updateAnswerCount() {
             const content = document.getElementById('notepadContent').value;
+            
             const letters = content.match(/[ABCD]/g);
+            const numbers = content.match(/\d+/g);
+            
             const letterCount = letters ? letters.length : 0;
-            document.getElementById('answerCount').textContent = letterCount;
+            const numberCount = numbers ? numbers.length : 0;
+            
+            document.getElementById('answerCount').textContent = letterCount + numberCount;
         }
         
         function showAcknowledgement(title, message, isSuccess) {
@@ -832,46 +656,28 @@
                 throw new Error('No files selected');
             }
             
-            const className = selectedClass;
+            const className = selectedClass.toLowerCase();
+            
             let uploaded = 0;
-            const errors = [];
             
             for (const file of selectedFiles) {
                 try {
-                    const base64Content = await readFileAsBase64(file);
-                    
-                    const formData = new FormData();
-                    formData.append('class', className);
-                    formData.append('filename', file.name);
-                    formData.append('content', base64Content.split(',')[1]);
-                    formData.append('type', 'question');
-                    
-                    const response = await fetch(WORKER_URL, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
+                    const success = await uploadToCloudflare(className, file, 'question');
+                    if (success) {
                         uploaded++;
-                    } else {
-                        errors.push(file.name);
                     }
                 } catch (error) {
-                    errors.push(file.name);
+                    console.error(`Failed to upload ${file.name}:`, error);
                 }
             }
             
             if (uploaded > 0) {
-                let message = `✅ ${uploaded} files uploaded to GitHub\n`;
-                message += `📁 Class ${className}/questions/\n`;
+                showAcknowledgement(
+                    'Upload Successful!',
+                    `✅ ${uploaded} files uploaded to ${selectedClass}`,
+                    true
+                );
                 
-                if (errors.length > 0) {
-                    message += `\n⚠️ Failed: ${errors.join(', ')}`;
-                }
-                
-                showAcknowledgement('Questions Uploaded!', message, true);
                 selectedFiles = [];
                 updateFileList();
                 updateUploadButton();
@@ -881,8 +687,7 @@
         }
         
         async function uploadAnswerKey() {
-            const className = selectedClass;
-            const selectedDate = document.getElementById('answerDate').value;
+            const className = selectedClass.toLowerCase();
             const textarea = document.getElementById('notepadContent');
             let content = textarea.value.trim();
             
@@ -890,24 +695,22 @@
                 throw new Error('Answer key is empty');
             }
             
-            if (!selectedDate) {
-                throw new Error('Please select a date');
+            const valid = content.replace(/[ABCD0-9\n]/g, '');
+            if (valid.length > 0) {
+                throw new Error('Only A, B, C, D letters or numbers 0-9 allowed');
             }
             
-            // Clean content
-            const cleanContent = content.replace(/\s+/g, '');
+            // Encode answer key content
+            const base64Content = btoa(unescape(encodeURIComponent(content)));
             
-            // Encode for GitHub
-            const base64Content = btoa(unescape(encodeURIComponent(cleanContent)));
-            
-            // Send to worker
+            // Send to Cloudflare - NO FOLDER PARAMETER
             const formData = new FormData();
             formData.append('class', className);
             formData.append('content', base64Content);
             formData.append('type', 'answer');
-            formData.append('date', selectedDate);
+            // DO NOT add folder parameter - this fixes the issue!
             
-            const response = await fetch(WORKER_URL, {
+            const response = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData
             });
@@ -915,23 +718,48 @@
             const result = await response.json();
             
             if (!result.success) {
-                throw new Error('Upload failed: ' + (result.message || 'Unknown error'));
+                throw new Error('Failed to upload answer key: ' + result.message);
             }
             
-            const letters = cleanContent.match(/[ABCD]/g);
+            const letters = content.match(/[ABCD]/g);
+            const numbers = content.match(/\d+/g);
             const letterCount = letters ? letters.length : 0;
+            const numberCount = numbers ? numbers.length : 0;
             
-            let message = `✅ GitHub: Class ${className}/answers/answer-key-${selectedDate}.txt\n`;
-            if (result.drive?.success) {
-                message += `✅ Google Drive PDF: ${className}_${selectedDate}.pdf\n`;
-            }
-            message += `📊 Total Answers: ${letterCount}`;
+            showAcknowledgement(
+                'Answer Key Uploaded!',
+                `✅ Answer key saved for ${selectedClass} (${letterCount} letters, ${numberCount} numbers)`,
+                true
+            );
             
-            showAcknowledgement('Answer Key Uploaded!', message, true);
-            
+            // Clear notepad after successful upload
             textarea.value = '';
             updateAnswerCount();
             updateUploadButton();
+        }
+        
+        async function uploadToCloudflare(className, file, type) {
+            try {
+                const base64Content = await readFileAsBase64(file);
+                
+                // Send to Cloudflare Function
+                const formData = new FormData();
+                formData.append('class', className);
+                formData.append('filename', encodeURIComponent(file.name));
+                formData.append('content', base64Content.split(',')[1]);
+                formData.append('type', type);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                return result.success === true;
+                
+            } catch (error) {
+                throw error;
+            }
         }
         
         function readFileAsBase64(file) {
@@ -948,6 +776,74 @@
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
+   // GOOGLE DRIVE BACKUP - ADD THIS BEFORE EXISTING uploadAnswerKey FUNCTION
+const GAS_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+
+// Replace the existing uploadAnswerKey function with this:
+async function uploadAnswerKey() {
+    const className = selectedClass.toLowerCase();
+    const textarea = document.getElementById('notepadContent');
+    let content = textarea.value.trim();
+    
+    if (content.length === 0) {
+        throw new Error('Answer key is empty');
+    }
+    
+    const valid = content.replace(/[ABCD0-9\n]/g, '');
+    if (valid.length > 0) {
+        throw new Error('Only A, B, C, D letters or numbers 0-9 allowed');
+    }
+    
+    // Encode for GitHub
+    const base64Content = btoa(unescape(encodeURIComponent(content)));
+    
+    // SEND TO GITHUB
+    const formData = new FormData();
+    formData.append('class', className);
+    formData.append('content', base64Content);
+    formData.append('type', 'answer');
+    
+    const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+        throw new Error('Failed to upload answer key: ' + result.message);
+    }
+    
+    // SEND TO GOOGLE DRIVE
+    try {
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                class: selectedClass,
+                content: content
+            })
+        });
+    } catch (e) {
+        console.log('Google Drive backup optional');
+    }
+    
+    const letters = content.match(/[ABCD]/g);
+    const numbers = content.match(/\d+/g);
+    const letterCount = letters ? letters.length : 0;
+    const numberCount = numbers ? numbers.length : 0;
+    
+    showAcknowledgement(
+        'Answer Key Uploaded!',
+        `✅ Saved to GitHub + Google Drive\n📊 ${letterCount} letters, ${numberCount} numbers`,
+        true
+    );
+    
+    textarea.value = '';
+    updateAnswerCount();
+    updateUploadButton();
+}
     </script>
 </body>
 </html>
